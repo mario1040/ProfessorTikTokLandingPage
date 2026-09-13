@@ -111,8 +111,6 @@ export default function App() {
               content_name: 'Custom Kitchen Design'
             }
           ],
-          value: 0,
-          currency: 'EGP'
         });
       }
     } catch (e) {
