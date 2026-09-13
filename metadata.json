@@ -1,0 +1,6 @@
+{
+  "name": "البروفيسور للمطابخ والديكور",
+  "description": "البروفيسور للمطابخ والديكور - صمم مطبخ أحلامك بأحدث التصميمات العصرية، خامات مستوردة، ضمان 10 سنوات وتصميم 3D مجاني.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
