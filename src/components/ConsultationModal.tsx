@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, CheckCircle2, ArrowLeft, Phone, User, ShieldCheck, Compass } from 'lucide-react';
+import { X, Sparkles, CheckCircle2, ArrowLeft, Phone, User, ShieldCheck } from 'lucide-react';
 import { formatToE164, trackSubmitForm, trackSchedule, identifyUser } from '../utils/tiktok';
-
-const SERVICE_OPTIONS = [
-  'تصميم مطبخ كامل',
-  'تعديل مطبخ حالي',
-  'ديكورات وتصاميم 3D',
-];
 
 interface ConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmitLead: (data: { name: string; phone: string; service?: string }) => void;
+  onSubmitLead: (data: { name: string; phone: string }) => void;
   customContext?: string;
 }
 
@@ -24,7 +18,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedService, setSelectedService] = useState(SERVICE_OPTIONS[0]);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,15 +47,8 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
         // Pass formatted E.164 customer info for TikTok Advanced Matching
         identifyUser(formattedPhone);
 
-        // 1. SubmitForm Event with selectedService injected into contents, description, and query
-        trackSubmitForm(
-          'lead_form_01',
-          selectedService || 'Consultation Request',
-          500,
-          'EGP',
-          `خدمة مطلوبة: ${selectedService}`,
-          selectedService
-        );
+        // 1. SubmitForm Event with rigid, non-empty contents
+        trackSubmitForm('lead_form_01', 'Consultation Request', 500, 'EGP');
 
         // 2. Schedule Event with rigid, non-empty contents
         trackSchedule('consultation_01', 'Booked 3D Design');
@@ -73,8 +59,8 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 
     // Dynamic WhatsApp Redirection message
     const customMessage = customContext
-      ? `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} (${trimmedPhone}). مهتم بـ "${selectedService}". ${customContext}`
-      : `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بـ "${selectedService}" وحجز معاينة وتصميم 3D لمطبخي.`;
+      ? `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} (${trimmedPhone}). ${customContext}`
+      : `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم 3D لمطبخي.`;
 
     const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(customMessage)}`;
 
@@ -86,13 +72,11 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       onSubmitLead({
         name: trimmedName,
         phone: trimmedPhone,
-        service: selectedService,
       });
 
       setIsSubmitting(false);
       setName('');
       setPhone('');
-      setSelectedService(SERVICE_OPTIONS[0]);
       onClose();
     }, 200);
   };
@@ -144,7 +128,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name Field */}
               <div>
                 <label className="block text-xs font-semibold text-white/80 mb-1.5">
                   الاسم بالكامل
@@ -164,7 +147,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 </div>
               </div>
 
-              {/* Phone Field */}
               <div>
                 <label className="block text-xs font-semibold text-white/80 mb-1.5">
                   رقم الهاتف / واتساب للتواصل
@@ -186,32 +168,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 <span className="mt-1 block text-[10px] text-white/40">
                   * سيتم التواصل معك عبر الواتساب فوراً لمناقشة المساحة والمخطط.
                 </span>
-              </div>
-
-              {/* Service Type Dropdown */}
-              <div>
-                <label className="block text-xs font-semibold text-white/80 mb-1.5">
-                  نوع الخدمة المطلوبة
-                </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-white/40">
-                    <Compass className="h-4 w-4 text-[#dfb57b]" />
-                  </div>
-                  <select
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    className="w-full rounded-xl border border-white/15 bg-[#0b0e14] py-3.5 pr-10 pl-4 text-xs text-white focus:border-[#c5a880] focus:bg-[#10141c] focus:outline-none transition cursor-pointer appearance-none"
-                  >
-                    {SERVICE_OPTIONS.map((option) => (
-                      <option key={option} value={option} className="bg-[#0d1016] text-white py-1">
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-white/40 text-[10px]">
-                    ▼
-                  </div>
-                </div>
               </div>
 
               {error && (
