@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, CheckCircle2, ArrowLeft, Phone, User, ShieldCheck } from 'lucide-react';
+import { formatToE164, trackSubmitForm, trackSchedule, identifyUser } from '../utils/tiktok';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -8,31 +9,6 @@ interface ConsultationModalProps {
   onSubmitLead: (data: { name: string; phone: string }) => void;
   customContext?: string;
 }
-
-/**
- * Format Egyptian and international phone numbers to standard E.164 (e.g., +201149238763)
- * strictly required by TikTok Pixel Advanced Matching.
- */
-const formatToE164 = (phone: string): string => {
-  if (!phone) return '';
-  // Remove all non-digits
-  const digits = phone.replace(/\D/g, '');
-
-  // If starts with Egyptian local 0 (e.g. 011...), remove leading 0 and add +20
-  if (digits.startsWith('0')) {
-    return '+20' + digits.substring(1);
-  }
-  // If starts with 20 (e.g. 2011...), add +
-  if (digits.startsWith('20')) {
-    return '+' + digits;
-  }
-  // Default for 10-digit mobile numbers entered without 0 (e.g. 1149238763)
-  if (digits.length === 10 && ['10', '11', '12', '15'].some((prefix) => digits.startsWith(prefix))) {
-    return '+20' + digits;
-  }
-
-  return '+' + digits;
-};
 
 export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   isOpen,
@@ -63,66 +39,46 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     setError('');
     setIsSubmitting(true);
 
-    // Format phone number to standard E.164 format (+201XXXXXXXXX)
+    // Format phone number to standard E.164 format (+201XXXXXXXXX) for TikTok Advanced Matching
     const formattedPhone = formatToE164(trimmedPhone);
 
     try {
       if (typeof window !== 'undefined' && window.ttq) {
         // Pass formatted E.164 customer info for TikTok Advanced Matching
-        window.ttq.identify({
-          phone_number: formattedPhone,
-        });
+        identifyUser(formattedPhone);
 
-        // 1. Fulfill the missing Form Submit event
-        window.ttq.track('SubmitForm', {
-          contents: [
-            {
-              content_id: 'lead_form_01',
-              content_type: 'product',
-              content_name: 'Consultation Request',
-            },
-          ],
-          value: 500,
-          currency: 'EGP',
-        });
+        // 1. SubmitForm Event with rigid, non-empty contents
+        trackSubmitForm('lead_form_01', 'Consultation Request', 500, 'EGP');
 
-        // 2. Fulfill the missing Schedule event
-        window.ttq.track('Schedule', {
-          contents: [
-            {
-              content_id: 'consultation_01',
-              content_type: 'product',
-              content_name: 'Booked 3D Design',
-            },
-          ],
-        });
+        // 2. Schedule Event with rigid, non-empty contents
+        trackSchedule('consultation_01', 'Booked 3D Design');
       }
     } catch (err) {
       console.error('TikTok Pixel Tracking Error:', err);
     }
 
-    // Dynamic WhatsApp Redirection immediately after tracking
+    // Dynamic WhatsApp Redirection message
     const customMessage = customContext
       ? `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} (${trimmedPhone}). ${customContext}`
       : `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم 3D لمطبخي.`;
 
     const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(customMessage)}`;
 
-    // Open WhatsApp in a new tab, then close the modal
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-
-    // Notify parent if needed for persistence or custom logic
-    onSubmitLead({
-      name: trimmedName,
-      phone: trimmedPhone,
-    });
-
+    // Preserved 200ms delay for reliable pixel beacon transmission before redirecting to WhatsApp
     setTimeout(() => {
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+      // Notify parent if needed for persistence or custom logic
+      onSubmitLead({
+        name: trimmedName,
+        phone: trimmedPhone,
+      });
+
       setIsSubmitting(false);
       setName('');
       setPhone('');
       onClose();
-    }, 400);
+    }, 200);
   };
 
   return (
@@ -143,133 +99,119 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             onClick={(e) => e.stopPropagation()}
             dir="rtl"
           >
-            {/* Ambient gold glow */}
-            <div className="pointer-events-none absolute -top-24 right-1/2 h-48 w-48 translate-x-1/2 rounded-full bg-[#c5a880]/15 blur-3xl" />
+            {/* Top decorative gradient line */}
+            <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#c5a880] to-transparent" />
 
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="absolute left-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 backdrop-blur-md transition hover:border-[#c5a880]/40 hover:text-white"
-              aria-label="إغلاق النافذة"
+              className="absolute left-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-white/30 hover:text-white"
+              aria-label="إغلاق"
             >
               <X className="h-4 w-4" />
             </button>
 
-            {/* Header Badge */}
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#c5a880]/30 bg-[#c5a880]/10 px-3 py-1 text-[11px] font-semibold text-[#f0cb98]">
-              <Sparkles className="h-3 w-3 text-[#dfb57b]" />
-              <span>استشارة معمارية وتصميم مجاني</span>
+            {/* Header / Value Proposition */}
+            <div className="mb-6">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#c5a880]/30 bg-[#c5a880]/10 px-3.5 py-1 text-[11px] font-bold text-[#f0cb98]">
+                <Sparkles className="h-3.5 w-3.5 text-[#dfb57b]" />
+                <span>عرض المعاينة الهندسية والتصميم 3D</span>
+              </div>
+              <h2 className="text-2xl font-black text-white sm:text-3xl">
+                احجز استشارتك المعمارية مجاناً
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed text-white/60 font-light">
+                سجل بياناتك وسيتم توجيهك فوراً لمحادثة المهندس المعماري على واتساب لتحديد موعد المعاينة بالليزر والبدء في التصميم ثلاثي الأبعاد لمساحتك.
+              </p>
             </div>
 
-            {/* Modal Title */}
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-snug">
-              احجز معاينتك واستلم تصميم 3D مجاناً
-            </h3>
-            <p className="mt-2 text-xs leading-relaxed text-white/65 font-light">
-              سجل اسمك ورقم هاتفك الآن ليقوم أحد مهندسي أتيليه «البروفيسور» بالتواصل معك مباشرة، وتحديد موعد المعاينة ورفع المقاسات بالليزر.
-            </p>
-
             {/* Form */}
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              {/* Name Field with standard AAM attributes */}
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label
-                  htmlFor="consultation-name"
-                  className="block text-xs font-medium text-white/80 mb-1.5 flex items-center justify-between"
-                >
-                  <span>الاسم بالكامل <span className="text-[#dfb57b]">*</span></span>
-                  <span className="text-[10px] text-white/40 font-light">مطلوب</span>
+                <label className="block text-xs font-semibold text-white/80 mb-1.5">
+                  الاسم بالكامل
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-white/40">
-                    <User className="h-4 w-4" />
+                    <User className="h-4 w-4 text-[#dfb57b]" />
                   </div>
                   <input
-                    id="consultation-name"
                     type="text"
-                    name="name"
-                    autoComplete="name"
                     required
                     value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      if (error) setError('');
-                    }}
-                    placeholder="مثال: م. أحمد عبد العزيز"
-                    className="w-full rounded-xl border border-white/15 bg-white/[0.04] py-3.5 pr-10 pl-4 text-sm text-white placeholder-white/30 transition focus:border-[#c5a880] focus:bg-[#12161f] focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="مثال: المهندس محمد أحمد"
+                    className="w-full rounded-xl border border-white/15 bg-white/[0.03] py-3.5 pr-10 pl-4 text-xs text-white placeholder-white/30 focus:border-[#c5a880] focus:bg-white/[0.06] focus:outline-none transition"
                   />
                 </div>
               </div>
 
-              {/* Phone Field with standard AAM attributes */}
               <div>
-                <label
-                  htmlFor="consultation-phone"
-                  className="block text-xs font-medium text-white/80 mb-1.5 flex items-center justify-between"
-                >
-                  <span>رقم الهاتف / الواتساب <span className="text-[#dfb57b]">*</span></span>
-                  <span className="text-[10px] text-white/40 font-light">مطلوب</span>
+                <label className="block text-xs font-semibold text-white/80 mb-1.5">
+                  رقم الهاتف / واتساب للتواصل
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-white/40">
-                    <Phone className="h-4 w-4" />
+                    <Phone className="h-4 w-4 text-[#dfb57b]" />
                   </div>
                   <input
-                    id="consultation-phone"
                     type="tel"
-                    name="phone"
-                    autoComplete="tel"
                     required
-                    dir="ltr"
                     value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      if (error) setError('');
-                    }}
-                    placeholder="+20 10X XXX XXXX"
-                    className="w-full rounded-xl border border-white/15 bg-white/[0.04] py-3.5 pr-10 pl-4 text-sm text-white text-right placeholder-white/30 transition focus:border-[#c5a880] focus:bg-[#12161f] focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="مثال: 01149238763 أو +20..."
+                    dir="ltr"
+                    className="w-full rounded-xl border border-white/15 bg-white/[0.03] py-3.5 pr-10 pl-4 text-xs text-left text-white placeholder-white/30 focus:border-[#c5a880] focus:bg-white/[0.06] focus:outline-none transition font-mono"
                   />
                 </div>
+                <span className="mt-1 block text-[10px] text-white/40">
+                  * سيتم التواصل معك عبر الواتساب فوراً لمناقشة المساحة والمخطط.
+                </span>
               </div>
 
               {error && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
                   {error}
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Guarantees / Trust Badges */}
+              <div className="grid grid-cols-2 gap-2.5 rounded-2xl border border-white/[0.08] bg-black/40 p-3 text-[11px] text-white/70">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#dfb57b] shrink-0" />
+                  <span>معاينة ليزر وتصميم 3D</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#dfb57b] shrink-0" />
+                  <span>ضمان رسمي 10 سنوات</span>
+                </div>
+              </div>
+
+              {/* Submit CTA */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="refined-luxury-btn mt-2 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#c5a880] px-6 text-sm font-bold text-black shadow-lg transition duration-200 hover:bg-[#dfb57b] active:scale-[0.99] disabled:opacity-75"
+                className="refined-luxury-btn group flex h-13 w-full items-center justify-center gap-3 rounded-full bg-[#c5a880] px-6 text-xs font-bold text-black shadow-xl transition-all duration-300 hover:bg-[#dfb57b] hover:shadow-[0_10px_35px_rgba(197,168,128,0.25)] active:scale-[0.98] disabled:opacity-60"
               >
                 {isSubmitting ? (
-                  <span>جاري تسجيل الحجز وتأكيد البيانات...</span>
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                    <span>جاري التجهيز والتحويل للواتساب...</span>
+                  </span>
                 ) : (
                   <>
-                    <span>تأكيد الحجز والتواصل عبر الواتساب</span>
-                    <ArrowLeft className="h-4 w-4" />
+                    <span>تأكيد الحجز ومتابعة المحادثة</span>
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Value Guarantees */}
-            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-white/[0.08] pt-4 text-center text-[10px] text-white/50">
-              <div className="flex items-center justify-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-[#dfb57b]" />
-                <span>تصميم 3D مجاني</span>
-              </div>
-              <div className="flex items-center justify-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-[#dfb57b]" />
-                <span>معاينة بالليزر</span>
-              </div>
-              <div className="flex items-center justify-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-[#dfb57b]" />
-                <span>ضمان 10 سنوات</span>
-              </div>
+            <div className="mt-4 text-center">
+              <span className="text-[10px] text-white/40">
+                🔒 بياناتك محمية تماماً وتُستخدم فقط لترتيب معاينة واستشارة مطبخك.
+              </span>
             </div>
           </motion.div>
         </div>

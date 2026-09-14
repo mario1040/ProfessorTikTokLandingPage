@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Project } from './types';
 import { PROJECTS, TIKTOK_PIXEL_ID } from './data';
+import { trackViewContent, trackContact } from './utils/tiktok';
 
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -38,25 +39,12 @@ export function App() {
   useEffect(() => {
     if (window.ttq) {
       window.ttq.page();
-      try {
-        window.ttq.track('ViewContent', {
-          contents: [
-            {
-              content_id: 'view_landing_page',
-              content_type: 'product',
-              content_name: 'Professor Luxury Kitchens Atelier',
-            },
-          ],
-          value: 100,
-          currency: 'EGP',
-        });
-      } catch {
-        // safe fallback
-      }
+      trackViewContent('kitchen_custom_01', 'Custom Kitchen Design');
     }
   }, []);
 
   const openConsultationModal = (contextMessage?: string) => {
+    trackContact('whatsapp_lead_01', 'WhatsApp Inquiry');
     setConsultationContext(contextMessage || '');
     setIsConsultationModalOpen(true);
   };
