@@ -36,20 +36,64 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     setError('');
     setIsSubmitting(true);
 
+    // Sanitize phone number for Advanced Matching (digits only)
+    const cleanPhone = trimmedPhone.replace(/\D/g, '');
+
     try {
-      onSubmitLead({
-        name: trimmedName,
-        phone: trimmedPhone,
-      });
-      // Reset form after short delay
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setName('');
-        setPhone('');
-      }, 500);
-    } catch {
-      setIsSubmitting(false);
+      if (typeof window !== 'undefined' && window.ttq) {
+        // Pass customer info for TikTok Advanced Matching
+        window.ttq.identify({
+          phone_number: cleanPhone.startsWith('0') ? '2' + cleanPhone : cleanPhone,
+        });
+
+        // 1. Fulfill the missing Form Submit event
+        window.ttq.track('SubmitForm', {
+          contents: [
+            {
+              content_id: 'lead_form_01',
+              content_type: 'product',
+              content_name: 'Consultation Request',
+            },
+          ],
+          value: 500,
+          currency: 'EGP',
+        });
+
+        // 2. Fulfill the missing Schedule event
+        window.ttq.track('Schedule', {
+          contents: [
+            {
+              content_id: 'consultation_01',
+              content_type: 'product',
+              content_name: 'Booked 3D Design',
+            },
+          ],
+        });
+      }
+    } catch (err) {
+      console.error('TikTok Pixel Tracking Error:', err);
     }
+
+    // Dynamic WhatsApp Redirection immediately after tracking
+    const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(
+      `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم مطبخي`
+    )}`;
+
+    // Open WhatsApp in a new tab, then close the modal
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+    // Notify parent if needed for persistence or custom logic
+    onSubmitLead({
+      name: trimmedName,
+      phone: trimmedPhone,
+    });
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setName('');
+      setPhone('');
+      onClose();
+    }, 400);
   };
 
   return (
@@ -99,9 +143,12 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              {/* Name Field */}
+              {/* Name Field with standard AAM attributes */}
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1.5 flex items-center justify-between">
+                <label
+                  htmlFor="consultation-name"
+                  className="block text-xs font-medium text-white/80 mb-1.5 flex items-center justify-between"
+                >
                   <span>الاسم بالكامل <span className="text-[#dfb57b]">*</span></span>
                   <span className="text-[10px] text-white/40 font-light">مطلوب</span>
                 </label>
@@ -110,7 +157,10 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     <User className="h-4 w-4" />
                   </div>
                   <input
+                    id="consultation-name"
                     type="text"
+                    name="name"
+                    autoComplete="name"
                     required
                     value={name}
                     onChange={(e) => {
@@ -123,9 +173,12 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 </div>
               </div>
 
-              {/* Phone Field */}
+              {/* Phone Field with standard AAM attributes */}
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1.5 flex items-center justify-between">
+                <label
+                  htmlFor="consultation-phone"
+                  className="block text-xs font-medium text-white/80 mb-1.5 flex items-center justify-between"
+                >
                   <span>رقم الهاتف / الواتساب <span className="text-[#dfb57b]">*</span></span>
                   <span className="text-[10px] text-white/40 font-light">مطلوب</span>
                 </label>
@@ -134,7 +187,10 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     <Phone className="h-4 w-4" />
                   </div>
                   <input
+                    id="consultation-phone"
                     type="tel"
+                    name="phone"
+                    autoComplete="tel"
                     required
                     dir="ltr"
                     value={phone}
@@ -161,7 +217,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 className="refined-luxury-btn mt-2 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#c5a880] px-6 text-sm font-bold text-black shadow-lg transition duration-200 hover:bg-[#dfb57b] active:scale-[0.99] disabled:opacity-75"
               >
                 {isSubmitting ? (
-                  <span>جاري تسجيل الحجز...</span>
+                  <span>جاري تسجيل الحجز وتأكيد البيانات...</span>
                 ) : (
                   <>
                     <span>تأكيد الحجز والتواصل عبر الواتساب</span>

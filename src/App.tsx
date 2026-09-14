@@ -24,6 +24,7 @@ import { ConsultationModal } from './components/ConsultationModal';
 declare global {
   interface Window {
     ttq?: {
+      identify: (customerInfo: { phone_number?: string; email?: string; external_id?: string }) => void;
       track: (event: string, params?: Record<string, unknown>) => void;
       page: () => void;
       load: (pixelId: string) => void;
@@ -199,44 +200,9 @@ export function App() {
     setIsConsultationModalOpen(true);
   };
 
-  // Handle lead submission with full TikTok Funnel Tracking
+  // Handle lead submission with full TikTok Funnel Tracking and Advanced Matching
   const handleLeadSubmit = ({ name, phone }: { name: string; phone: string }) => {
-    try {
-      if (window.ttq) {
-        // 1. Fulfill the missing Form Submit event
-        window.ttq.track('SubmitForm', {
-          contents: [
-            {
-              content_id: 'lead_form_01',
-              content_type: 'product',
-              content_name: 'Consultation Request',
-            },
-          ],
-          value: 500,
-          currency: 'EGP',
-        });
-
-        // 2. Fulfill the missing Schedule event
-        window.ttq.track('Schedule', {
-          contents: [
-            {
-              content_id: 'consultation_01',
-              content_type: 'product',
-              content_name: 'Booked 3D Design',
-            },
-          ],
-        });
-      }
-    } catch (err) {
-      console.error('TikTok Pixel Tracking Error:', err);
-    }
-
-    // Dynamic WhatsApp Redirection with captured Name & Phone
-    const customMessage = `أهلاً البروفيسور للمطابخ، أنا ${name} سجلت بياناتي ورقمي (${phone}) ومهتم بحجز معاينة وتصميم مطبخي`;
-    const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(customMessage)}`;
-
-    // Open WhatsApp in a new tab, then close the modal
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    // Lead is already tracked and redirected inside ConsultationModal, but we keep this handler synchronized
     setIsConsultationModalOpen(false);
   };
 
