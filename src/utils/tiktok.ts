@@ -60,17 +60,20 @@ export const trackViewContent = (
 };
 
 /**
- * Track SubmitForm event with guaranteed non-empty contents
+ * Track SubmitForm event with guaranteed non-empty contents and contextual parameters
+ * (query & description for service type, without transmitting plain text PII)
  */
 export const trackSubmitForm = (
   contentId = 'lead_form_01',
   contentName = 'Consultation Request',
   value = 500,
-  currency = 'EGP'
+  currency = 'EGP',
+  description?: string,
+  query?: string
 ) => {
   try {
     if (typeof window !== 'undefined' && window.ttq) {
-      window.ttq.track('SubmitForm', {
+      const payload: Record<string, unknown> = {
         contents: [
           {
             content_id: contentId,
@@ -80,7 +83,16 @@ export const trackSubmitForm = (
         ],
         value,
         currency,
-      });
+      };
+
+      if (description) {
+        payload.description = description;
+      }
+      if (query) {
+        payload.query = query;
+      }
+
+      window.ttq.track('SubmitForm', payload);
     }
   } catch (err) {
     console.warn('TikTok SubmitForm Error:', err);
