@@ -43,7 +43,7 @@ const MATERIALS: MaterialSpec[] = [
     durability: 98,
     waterproof: 95,
     heatproof: 92,
-    image: 'public/45dd05754a65295ca8c5959bced8a9be.jpg',
+    image: '/45dd05754a65295ca8c5959bced8a9be.jpg',
     color: '#dfb57b',
   },
   {
