@@ -19,6 +19,7 @@ import {
 import { Project } from './types';
 import { MaterialsShowcase } from './components/MaterialsShowcase';
 import { BeforeAfterShowcase } from './components/BeforeAfterShowcase';
+import { ConsultationModal } from './components/ConsultationModal';
 
 declare global {
   interface Window {
@@ -159,10 +160,27 @@ export function App() {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeConcern, setActiveConcern] = useState(concerns[0]);
+  const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
 
   useEffect(() => {
     if (window.ttq) {
       window.ttq.page();
+      // Fire ViewContent on page load for the consultation service offer
+      try {
+        window.ttq.track('ViewContent', {
+          contents: [
+            {
+              content_id: 'view_landing_page',
+              content_type: 'product',
+              content_name: 'Professor Luxury Kitchens Atelier',
+            },
+          ],
+          value: 100,
+          currency: 'EGP',
+        });
+      } catch {
+        // safe fallback
+      }
     }
   }, []);
 
@@ -176,6 +194,52 @@ export function App() {
     }
   };
 
+  // Open the Lead Capture modal for consultation
+  const openConsultationModal = () => {
+    setIsConsultationModalOpen(true);
+  };
+
+  // Handle lead submission with full TikTok Funnel Tracking
+  const handleLeadSubmit = ({ name, phone }: { name: string; phone: string }) => {
+    try {
+      if (window.ttq) {
+        // 1. Fulfill the missing Form Submit event
+        window.ttq.track('SubmitForm', {
+          contents: [
+            {
+              content_id: 'lead_form_01',
+              content_type: 'product',
+              content_name: 'Consultation Request',
+            },
+          ],
+          value: 500,
+          currency: 'EGP',
+        });
+
+        // 2. Fulfill the missing Schedule event
+        window.ttq.track('Schedule', {
+          contents: [
+            {
+              content_id: 'consultation_01',
+              content_type: 'product',
+              content_name: 'Booked 3D Design',
+            },
+          ],
+        });
+      }
+    } catch (err) {
+      console.error('TikTok Pixel Tracking Error:', err);
+    }
+
+    // Dynamic WhatsApp Redirection with captured Name & Phone
+    const customMessage = `أهلاً البروفيسور للمطابخ، أنا ${name} سجلت بياناتي ورقمي (${phone}) ومهتم بحجز معاينة وتصميم مطبخي`;
+    const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(customMessage)}`;
+
+    // Open WhatsApp in a new tab, then close the modal
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    setIsConsultationModalOpen(false);
+  };
+
   const filteredProjects = useMemo(() => {
     if (activeFilter === 'ALL') return PROJECTS;
     return PROJECTS.filter((p) => p.category === activeFilter);
@@ -184,15 +248,8 @@ export function App() {
   const heroProject = PROJECTS[1];
 
   const startWhatsApp = (message: string) => {
-    track('Contact', {
-      content_id: 'whatsapp-kitchen-inquiry',
-      content_type: 'product',
-      content_name: 'Bespoke Atelier Consultation',
-      value: 1,
-      currency: 'EGP',
-    });
-
-    window.open(makeWhatsAppUrl(message), '_blank', 'noopener,noreferrer');
+    // If user clicked any direct WhatsApp inquiry, also open the consultation modal to capture lead
+    openConsultationModal();
   };
 
   const scrollTo = (id: string) => {
@@ -791,6 +848,13 @@ export function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* LEAD CAPTURE CONSULTATION MODAL (TikTok Funnel SubmitForm & Schedule) */}
+      <ConsultationModal
+        isOpen={isConsultationModalOpen}
+        onClose={() => setIsConsultationModalOpen(false)}
+        onSubmitLead={handleLeadSubmit}
+      />
 
       <span className="sr-only">TikTok Pixel ID: {TIKTOK_PIXEL_ID}</span>
     </div>
