@@ -247,13 +247,7 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({ onStar
             </div>
 
             {/* 6. Quick Interactive Slider Controls (Bottom Center) */}
-            <div className="absolute inset-x-0 bottom-4 z-20 flex items-center justify-center gap-2 pointer-events-auto">
-              <div className="flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2 py-1 shadow-2xl backdrop-blur-md">
-                
-                
-                
-              </div>
-            </div>
+            
           </div>
         </div>
 
