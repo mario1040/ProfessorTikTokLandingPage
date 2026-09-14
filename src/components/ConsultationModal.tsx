@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, CheckCircle2, ArrowLeft, Phone, User, ShieldCheck } from 'lucide-react';
-import { formatToE164, trackSubmitForm, trackSchedule, identifyUser } from '../utils/tiktok';
+import {
+  X,
+  Sparkles,
+  CheckCircle2,
+  ArrowLeft,
+  Phone,
+  User,
+  ShieldCheck,
+  Clock,
+  Send,
+  Zap,
+} from 'lucide-react';
+import {
+  formatToE164,
+  trackSubmitForm,
+  trackSchedule,
+  identifyUser,
+} from '../utils/tiktok';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -24,61 +40,68 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim();
-    const trimmedPhone = phone.trim();
+    const cleanDigits = phone.replace(/\D/g, '');
 
-    if (!trimmedName) {
-      setError('يرجى كتابة الاسم الكريم للمتابعة');
+    // Validation: Name must not be empty
+    if (!trimmedName || trimmedName.length < 2) {
+      setError('يرجى إدخال اسمك بالكامل للمتابعة.');
       return;
     }
 
-    if (!trimmedPhone || trimmedPhone.length < 9) {
-      setError('يرجى إدخال رقم هاتف أو واتساب صحيح للتواصل');
+    // Validation: Egyptian phone number must be at least 10 digits
+    if (!cleanDigits || cleanDigits.length < 10) {
+      setError('يرجى إدخال رقم هاتف صحيح (10 أرقام على الأقل، مثال: 01149238763)');
       return;
     }
 
     setError('');
     setIsSubmitting(true);
 
-    // Format phone number to standard E.164 format (+201XXXXXXXXX) for TikTok Advanced Matching
-    const formattedPhone = formatToE164(trimmedPhone);
+    // PART 1: Format to standard E.164 (+201...)
+    const formattedPhone = formatToE164(phone);
 
     try {
       if (typeof window !== 'undefined' && window.ttq) {
-        // Pass formatted E.164 customer info for TikTok Advanced Matching
+        // 1. Advanced Matching BEFORE conversion events
         identifyUser(formattedPhone);
 
-        // 1. SubmitForm Event with rigid, non-empty contents
+        // 2. Fire SubmitForm with rigid contents and value: 500
         trackSubmitForm('lead_form_01', 'Consultation Request', 500, 'EGP');
 
-        // 2. Schedule Event with rigid, non-empty contents
-        trackSchedule('consultation_01', 'Booked 3D Design');
+        // 3. Fire Schedule with rigid contents and value: 500
+        trackSchedule('consultation_01', 'Booked 3D Design', 500, 'EGP');
       }
     } catch (err) {
-      console.error('TikTok Pixel Tracking Error:', err);
+      console.error('TikTok Tracking Execution Error:', err);
     }
 
     // Dynamic WhatsApp Redirection message
     const customMessage = customContext
-      ? `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} (${trimmedPhone}). ${customContext}`
-      : `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم 3D لمطبخي.`;
+      ? `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} (${formattedPhone}). ${customContext}`
+      : `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم مطبخي`;
 
     const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(customMessage)}`;
 
-    // Preserved 200ms delay for reliable pixel beacon transmission before redirecting to WhatsApp
+    // CRITICAL MOBILE FIX: Wrap WhatsApp redirection in a setTimeout of 250ms
+    // to ensure TikTok HTTP tracking requests / beacons are not aborted on mobile devices.
     setTimeout(() => {
-      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      // Use window.location.href (or window.open fallback for popup-friendly envs)
+      try {
+        window.location.href = whatsappUrl;
+      } catch {
+        window.open(whatsappUrl, '_blank');
+      }
 
-      // Notify parent if needed for persistence or custom logic
       onSubmitLead({
         name: trimmedName,
-        phone: trimmedPhone,
+        phone: formattedPhone,
       });
 
       setIsSubmitting(false);
       setName('');
       setPhone('');
       onClose();
-    }, 200);
+    }, 250);
   };
 
   return (
@@ -89,48 +112,86 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
           role="dialog"
           aria-modal="true"
           onClick={onClose}
+          dir="rtl"
         >
+          {/* Backdrop blur effect */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+          />
+
+          {/* Modal Container */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="relative w-full max-w-[540px] overflow-hidden rounded-3xl border border-[#c5a880]/35 bg-[#0d1016] p-6 sm:p-8 text-right shadow-[0_25px_80px_rgba(0,0,0,0.8)]"
+            exit={{ opacity: 0, scale: 0.94, y: 20 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 w-full max-w-[520px] overflow-hidden rounded-[28px] border border-[#c5a880]/30 bg-[#0b0e14] p-6 sm:p-8 text-right shadow-[0_25px_80px_rgba(0,0,0,0.85)]"
             onClick={(e) => e.stopPropagation()}
-            dir="rtl"
           >
-            {/* Top decorative gradient line */}
+            {/* Top decorative amber gradient hairline */}
             <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#c5a880] to-transparent" />
+
+            {/* Ambient Background Glow inside Modal */}
+            <div className="pointer-events-none absolute -left-20 -top-20 h-48 w-48 rounded-full bg-[#c5a880]/10 blur-[60px]" />
+            <div className="pointer-events-none absolute -right-20 -bottom-20 h-48 w-48 rounded-full bg-[#dfb57b]/5 blur-[60px]" />
 
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="absolute left-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-white/30 hover:text-white"
+              className="absolute left-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition-all hover:border-white/30 hover:bg-white/10 hover:text-white"
               aria-label="إغلاق"
             >
               <X className="h-4 w-4" />
             </button>
 
-            {/* Header / Value Proposition */}
+            {/* Header Badge & Title */}
             <div className="mb-6">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#c5a880]/30 bg-[#c5a880]/10 px-3.5 py-1 text-[11px] font-bold text-[#f0cb98]">
+              <div className="mb-3.5 inline-flex items-center gap-2 rounded-full border border-[#c5a880]/35 bg-[#c5a880]/10 px-3.5 py-1 text-[11px] font-bold text-[#f0cb98]">
                 <Sparkles className="h-3.5 w-3.5 text-[#dfb57b]" />
-                <span>عرض المعاينة الهندسية والتصميم 3D</span>
+                <span>معاينة ليزر + تصميم 3D مجاناً بالكامل</span>
               </div>
-              <h2 className="text-2xl font-black text-white sm:text-3xl">
-                احجز استشارتك المعمارية مجاناً
+
+              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                احجز استشارتك وتصميمك الآن
               </h2>
-              <p className="mt-2 text-xs leading-relaxed text-white/60 font-light">
-                سجل بياناتك وسيتم توجيهك فوراً لمحادثة المهندس المعماري على واتساب لتحديد موعد المعاينة بالليزر والبدء في التصميم ثلاثي الأبعاد لمساحتك.
+
+              <p className="mt-2 text-xs leading-relaxed text-white/65 font-light">
+                سجل بياناتك وسيتم تحويلك فوراً لمحادثة المهندس المعماري على واتساب لتحديد موعد المعاينة الهندسية ومناقشة تفاصيل مطبخك.
               </p>
+            </div>
+
+            {/* Trust Highlights (Free 3D Design & Fast Response Guarantees) */}
+            <div className="mb-5 grid grid-cols-2 gap-2.5 rounded-2xl border border-[#c5a880]/20 bg-white/[0.02] p-3 text-[11px] text-white/80">
+              <div className="flex items-center gap-2">
+                <div className="grid h-6 w-6 place-items-center rounded-lg bg-[#c5a880]/15 text-[#dfb57b]">
+                  <Zap className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <div className="font-bold text-white">تصميم 3D مجاني</div>
+                  <div className="text-[10px] text-white/50">رؤية واقعية لمطبخك</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="grid h-6 w-6 place-items-center rounded-lg bg-[#c5a880]/15 text-[#dfb57b]">
+                  <Clock className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <div className="font-bold text-white">رد فوري ومباشر</div>
+                  <div className="text-[10px] text-white/50">خلال دقائق عبر واتساب</div>
+                </div>
+              </div>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-white/80 mb-1.5">
-                  الاسم بالكامل
+                <label className="block text-xs font-semibold text-white/90 mb-1.5">
+                  الاسم الكريم
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-white/40">
@@ -141,15 +202,15 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="مثال: المهندس محمد أحمد"
-                    className="w-full rounded-xl border border-white/15 bg-white/[0.03] py-3.5 pr-10 pl-4 text-xs text-white placeholder-white/30 focus:border-[#c5a880] focus:bg-white/[0.06] focus:outline-none transition"
+                    placeholder="مثال: المهندس أحمد محمود"
+                    className="w-full rounded-xl border border-white/15 bg-white/[0.04] py-3.5 pr-10 pl-4 text-xs text-white placeholder-white/35 transition focus:border-[#c5a880] focus:bg-white/[0.08] focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-white/80 mb-1.5">
-                  رقم الهاتف / واتساب للتواصل
+                <label className="block text-xs font-semibold text-white/90 mb-1.5">
+                  رقم الهاتف أو الواتساب
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-white/40">
@@ -160,9 +221,9 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="مثال: 01149238763 أو +20..."
+                    placeholder="01149238763 أو +20..."
                     dir="ltr"
-                    className="w-full rounded-xl border border-white/15 bg-white/[0.03] py-3.5 pr-10 pl-4 text-xs text-left text-white placeholder-white/30 focus:border-[#c5a880] focus:bg-white/[0.06] focus:outline-none transition font-mono"
+                    className="w-full rounded-xl border border-white/15 bg-white/[0.04] py-3.5 pr-10 pl-4 text-xs text-left text-white placeholder-white/35 font-mono transition focus:border-[#c5a880] focus:bg-white/[0.08] focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
                   />
                 </div>
                 <span className="mt-1 block text-[10px] text-white/40">
@@ -170,29 +231,36 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 </span>
               </div>
 
+              {/* Error Message */}
               {error && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
+                >
                   {error}
-                </div>
+                </motion.div>
               )}
 
-              {/* Guarantees / Trust Badges */}
-              <div className="grid grid-cols-2 gap-2.5 rounded-2xl border border-white/[0.08] bg-black/40 p-3 text-[11px] text-white/70">
-                <div className="flex items-center gap-2">
+              {/* Guarantees Badges */}
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/[0.08] bg-black/40 p-2.5 text-[10px] text-white/70">
+                <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-[#dfb57b] shrink-0" />
-                  <span>معاينة ليزر وتصميم 3D</span>
+                  <span>معاينة بالليزر للأبعاد الدقيقة</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#dfb57b] shrink-0" />
-                  <span>ضمان رسمي 10 سنوات</span>
+                  <span>ضمان رسمي معتمد 10 سنوات</span>
                 </div>
               </div>
 
               {/* Submit CTA */}
-              <button
+              <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className="refined-luxury-btn group flex h-13 w-full items-center justify-center gap-3 rounded-full bg-[#c5a880] px-6 text-xs font-bold text-black shadow-xl transition-all duration-300 hover:bg-[#dfb57b] hover:shadow-[0_10px_35px_rgba(197,168,128,0.25)] active:scale-[0.98] disabled:opacity-60"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className="group relative flex h-13 w-full items-center justify-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-[#c5a880] to-[#dfb57b] px-6 text-xs font-bold text-black shadow-[0_10px_35px_rgba(197,168,128,0.3)] transition-all duration-300 hover:shadow-[0_15px_45px_rgba(197,168,128,0.4)] disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -201,16 +269,17 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                   </span>
                 ) : (
                   <>
-                    <span>تأكيد الحجز ومتابعة المحادثة</span>
+                    <Send className="h-4 w-4 text-black transition-transform duration-300 group-hover:-translate-x-1" />
+                    <span>تأكيد الحجز ومتابعة المحادثة فوراً</span>
                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                   </>
                 )}
-              </button>
+              </motion.button>
             </form>
 
             <div className="mt-4 text-center">
               <span className="text-[10px] text-white/40">
-                🔒 بياناتك محمية تماماً وتُستخدم فقط لترتيب معاينة واستشارة مطبخك.
+                🔒 خصوصيتك مضمونة 100% — بياناتك مشفرة ولا يتم مشاركتها أبداً.
               </span>
             </div>
           </motion.div>

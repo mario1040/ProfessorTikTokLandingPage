@@ -13,24 +13,43 @@ export interface TikTokContentItem {
 }
 
 /**
- * Standardize Egyptian & international phone numbers to E.164 format (+201XXXXXXXXX)
- * as strictly required by TikTok Advanced Matching.
+ * Standardize any Egyptian phone format (starting with 01, 1, 20, or +20)
+ * into strictly compliant E.164 format (+201XXXXXXXXX) as required by TikTok Advanced Matching.
  */
 export const formatToE164 = (phone: string): string => {
   if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
+  // Remove all non-digit characters
+  let digits = phone.replace(/\D/g, '');
 
-  if (digits.startsWith('0')) {
-    return '+20' + digits.substring(1);
+  if (!digits) return '';
+
+  // Case: Starts with 0020... -> remove leading 00
+  if (digits.startsWith('0020')) {
+    digits = digits.substring(2);
   }
-  if (digits.startsWith('20')) {
+
+  // Case: Starts with 201... (12 digits)
+  if (digits.startsWith('20') && digits.length >= 12) {
     return '+' + digits;
   }
+
+  // Case: Starts with 01... (11 digits e.g. 01149238763) -> convert to +201149238763
+  if (digits.startsWith('01') && digits.length === 11) {
+    return '+20' + digits.substring(1);
+  }
+
+  // Case: Starts with 1... (10 digits e.g. 1149238763, 10, 12, 15)
   if (digits.length === 10 && ['10', '11', '12', '15'].some((prefix) => digits.startsWith(prefix))) {
     return '+20' + digits;
   }
 
-  return '+' + digits;
+  // If already starts with 20
+  if (digits.startsWith('20')) {
+    return '+' + digits;
+  }
+
+  // Default fallback if digits provided
+  return '+20' + digits;
 };
 
 /**
@@ -60,7 +79,7 @@ export const trackViewContent = (
 };
 
 /**
- * Track SubmitForm event with guaranteed non-empty contents
+ * Track SubmitForm event with guaranteed non-empty contents and explicit value
  */
 export const trackSubmitForm = (
   contentId = 'lead_form_01',
@@ -88,11 +107,13 @@ export const trackSubmitForm = (
 };
 
 /**
- * Track Schedule event with guaranteed non-empty contents
+ * Track Schedule event with guaranteed non-empty contents and explicit value
  */
 export const trackSchedule = (
   contentId = 'consultation_01',
-  contentName = 'Booked 3D Design'
+  contentName = 'Booked 3D Design',
+  value = 500,
+  currency = 'EGP'
 ) => {
   try {
     if (typeof window !== 'undefined' && window.ttq) {
@@ -104,6 +125,8 @@ export const trackSchedule = (
             content_name: contentName,
           },
         ],
+        value,
+        currency,
       });
     }
   } catch (err) {
@@ -136,7 +159,7 @@ export const trackContact = (
 };
 
 /**
- * Identify user with E.164 phone number
+ * Identify user with E.164 phone number for Advanced Matching
  */
 export const identifyUser = (phone: string, email?: string) => {
   try {
