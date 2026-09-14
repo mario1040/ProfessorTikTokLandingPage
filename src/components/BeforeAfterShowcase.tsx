@@ -170,40 +170,6 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({ onStar
           <strong className="text-base font-black text-white">{activeCase.title}</strong>
           <span className="mr-3 text-white/45">📍 {activeCase.location}</span>
         </div>
-
-        {/* Quick Position Presets */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 p-1 text-[11px] font-bold text-white/70">
-          <span className="px-2 text-[10px] text-white/40">المقارنة:</span>
-          <button
-            type="button"
-            onClick={() => setSliderPosition(20)}
-            className={`rounded-lg px-2.5 py-1 transition ${
-              sliderPosition < 35 ? 'bg-white/20 text-white' : 'hover:text-white'
-            }`}
-          >
-            تركيز على (قبل)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSliderPosition(50)}
-            className={`rounded-lg px-2.5 py-1 transition ${
-              sliderPosition >= 35 && sliderPosition <= 65
-                ? 'bg-[#dfb57b] text-black'
-                : 'hover:text-white'
-            }`}
-          >
-            نصف ونصف 50%
-          </button>
-          <button
-            type="button"
-            onClick={() => setSliderPosition(80)}
-            className={`rounded-lg px-2.5 py-1 transition ${
-              sliderPosition > 65 ? 'bg-emerald-500 text-black' : 'hover:text-white'
-            }`}
-          >
-            تركيز على (بعد)
-          </button>
-        </div>
       </div>
 
       {/* INTERACTIVE COMPARISON SLIDER STAGE */}

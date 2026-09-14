@@ -6,6 +6,7 @@ interface ConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitLead: (data: { name: string; phone: string }) => void;
+  customContext?: string;
 }
 
 /**
@@ -37,6 +38,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   isOpen,
   onClose,
   onSubmitLead,
+  customContext,
 }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -100,9 +102,11 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     }
 
     // Dynamic WhatsApp Redirection immediately after tracking
-    const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(
-      `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم مطبخي`
-    )}`;
+    const customMessage = customContext
+      ? `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} (${trimmedPhone}). ${customContext}`
+      : `أهلاً البروفيسور للمطابخ، أنا ${trimmedName} سجلت بياناتي ومهتم بحجز معاينة وتصميم 3D لمطبخي.`;
+
+    const whatsappUrl = `https://wa.me/201149238763?text=${encodeURIComponent(customMessage)}`;
 
     // Open WhatsApp in a new tab, then close the modal
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
