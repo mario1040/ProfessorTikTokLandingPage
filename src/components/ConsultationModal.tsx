@@ -8,6 +8,31 @@ interface ConsultationModalProps {
   onSubmitLead: (data: { name: string; phone: string }) => void;
 }
 
+/**
+ * Format Egyptian and international phone numbers to standard E.164 (e.g., +201149238763)
+ * strictly required by TikTok Pixel Advanced Matching.
+ */
+const formatToE164 = (phone: string): string => {
+  if (!phone) return '';
+  // Remove all non-digits
+  const digits = phone.replace(/\D/g, '');
+
+  // If starts with Egyptian local 0 (e.g. 011...), remove leading 0 and add +20
+  if (digits.startsWith('0')) {
+    return '+20' + digits.substring(1);
+  }
+  // If starts with 20 (e.g. 2011...), add +
+  if (digits.startsWith('20')) {
+    return '+' + digits;
+  }
+  // Default for 10-digit mobile numbers entered without 0 (e.g. 1149238763)
+  if (digits.length === 10 && ['10', '11', '12', '15'].some((prefix) => digits.startsWith(prefix))) {
+    return '+20' + digits;
+  }
+
+  return '+' + digits;
+};
+
 export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   isOpen,
   onClose,
@@ -36,14 +61,14 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     setError('');
     setIsSubmitting(true);
 
-    // Sanitize phone number for Advanced Matching (digits only)
-    const cleanPhone = trimmedPhone.replace(/\D/g, '');
+    // Format phone number to standard E.164 format (+201XXXXXXXXX)
+    const formattedPhone = formatToE164(trimmedPhone);
 
     try {
       if (typeof window !== 'undefined' && window.ttq) {
-        // Pass customer info for TikTok Advanced Matching
+        // Pass formatted E.164 customer info for TikTok Advanced Matching
         window.ttq.identify({
-          phone_number: cleanPhone.startsWith('0') ? '2' + cleanPhone : cleanPhone,
+          phone_number: formattedPhone,
         });
 
         // 1. Fulfill the missing Form Submit event
