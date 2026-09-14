@@ -249,29 +249,9 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({ onStar
             {/* 6. Quick Interactive Slider Controls (Bottom Center) */}
             <div className="absolute inset-x-0 bottom-4 z-20 flex items-center justify-center gap-2 pointer-events-auto">
               <div className="flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2 py-1 shadow-2xl backdrop-blur-md">
-                <button
-                  type="button"
-                  onClick={() => setQuickView(15)}
-                  className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white/70 hover:text-white transition"
-                >
-                  عرض (قبل)
-                </button>
-                <span className="text-white/20">•</span>
-                <button
-                  type="button"
-                  onClick={() => setQuickView(50)}
-                  className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[#dfb57b] hover:text-[#f0cb98] transition"
-                >
-                  مقارنة 50/50
-                </button>
-                <span className="text-white/20">•</span>
-                <button
-                  type="button"
-                  onClick={() => setQuickView(85)}
-                  className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white/70 hover:text-white transition"
-                >
-                  عرض (بعد)
-                </button>
+                
+                
+                
               </div>
             </div>
           </div>
