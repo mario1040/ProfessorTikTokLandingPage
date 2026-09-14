@@ -16,7 +16,7 @@ export const PROJECTS: Project[] = [
     description:
       'تكوين معماري معاصر يرتكز على الكتل الهادئة والتخزين غير المرئي. تم تفصيل المساحة بألواح بولي لاك تركي سوبر مات مع دمج أنظمة بلوم النمساوية المخفية بالكامل لمنح تجربة استخدام سلسة وهادئة.',
     image:
-      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1600&q=90',
+      'public/487434658_1110418867772539_4697664293445161849_n.jpg',
     material: 'بولي لاك سوبر مات / أنظمة بلوم',
     tags: ['مودرن هادئ', 'إضاءات مخفية', 'تخزين معماري'],
     specs: {
@@ -34,7 +34,7 @@ export const PROJECTS: Project[] = [
     description:
       'تصميم يجمع بين عمق الأسطح الداكنة المطفية مع جزيرة وسطية ضخمة من رخام الكوارتز ذي العروق الذهبية، ليشكل المطبخ قلب المنزل ونقطة الارتكاز البصرية الأولى.',
     image:
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=90',
+      'public/1679126199043.jpg',
     material: 'كوارتز ذهبي / بولي لاك مطفأ',
     tags: ['جزيرة مركزية', 'بار مفتوح', 'إضاءة بروفايل'],
     specs: {
@@ -106,7 +106,7 @@ export const PROJECTS: Project[] = [
     description:
       'استغلال هندسي دقيق لكل سنتيمتر من خلال آليات السحب الذكية (Magic Corners) ووحدات التخزين الرأسية المتكاملة مع الأجهزة المدمجة.',
     image:
-      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1600&q=90',
+      'public/images (8).jpg',
     material: 'HPL ألماني / زجاج مدمج',
     tags: ['زوايا ذكية', 'HPL ضد المياه', 'تخزين مريح'],
     specs: {
