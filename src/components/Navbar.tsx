@@ -53,10 +53,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? 'border-b border-white/[0.08] bg-[#07090c]/90 backdrop-blur-xl'
-            : 'bg-[#07090c]/60 backdrop-blur-md'
+            ? 'border-b border-white/[0.08] bg-[#07090c]/95 shadow-xl backdrop-blur-xl'
+            : 'border-b border-transparent bg-[#07090c]/85 backdrop-blur-md'
         }`}
       >
         <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4 sm:h-[70px] sm:px-6">

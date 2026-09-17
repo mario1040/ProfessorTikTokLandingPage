@@ -17,7 +17,6 @@ import { Footer } from './components/Footer';
 import { MobileStickyCta } from './components/MobileStickyCta';
 import { FloatingAction } from './components/FloatingAction';
 import { ProjectModal } from './components/ProjectModal';
-import { ConsultationModal } from './components/ConsultationModal';
 
 declare global {
   interface Window {
@@ -33,8 +32,6 @@ declare global {
 
 export function App() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
-  const [consultationContext, setConsultationContext] = useState<string>('');
 
   useEffect(() => {
     if (window.ttq) {
@@ -63,10 +60,6 @@ export function App() {
     }, 250);
   };
 
-  const handleLeadSubmit = () => {
-    setIsConsultationModalOpen(false);
-  };
-
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
       behavior: 'smooth',
@@ -81,13 +74,13 @@ export function App() {
       {/* Subtle architectural hairline border on top */}
       <div className="fixed inset-x-0 top-0 z-[100] h-[1px] bg-gradient-to-r from-transparent via-[#c5a880]/40 to-transparent" />
 
-      {/* HEADER: Ultra-clean, Simple, Creative & Mobile-First */}
+      {/* HEADER: Ultra-clean, Fixed Navbar at Top */}
       <Navbar
         onOpenConsultation={directToWhatsApp}
         onNavigate={scrollTo}
       />
 
-      <main>
+      <main className="pt-16 sm:pt-[70px]">
         {/* HERO SECTION: Serene, Architectural, Legacy */}
         <HeroSection
           heroProject={heroProject}
@@ -162,14 +155,6 @@ export function App() {
         onOpenConsultation={() =>
           directToWhatsApp('أهلاً البروفيسور، أود استشارة المهندس المعماري وحجز معاينة وتصميم 3D لمطبخي.')
         }
-      />
-
-      {/* LEAD CAPTURE CONSULTATION MODAL (Retained in codebase for future re-enablement) */}
-      <ConsultationModal
-        isOpen={isConsultationModalOpen}
-        onClose={() => setIsConsultationModalOpen(false)}
-        onSubmitLead={handleLeadSubmit}
-        customContext={consultationContext}
       />
 
       <span className="sr-only">TikTok Pixel ID: {TIKTOK_PIXEL_ID}</span>
