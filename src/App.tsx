@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Project } from './types';
-import { PROJECTS, TIKTOK_PIXEL_ID } from './data';
-import { trackViewContent, trackContact } from './utils/tiktok';
+import { PROJECTS, TIKTOK_PIXEL_ID, makeWhatsAppUrl } from './data';
+import { trackViewContent, trackContact, trackSubmitForm, trackSchedule } from './utils/tiktok';
 
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -43,10 +43,24 @@ export function App() {
     }
   }, []);
 
-  const openConsultationModal = (contextMessage?: string) => {
-    trackContact('whatsapp_lead_01', 'WhatsApp Inquiry');
-    setConsultationContext(contextMessage || '');
-    setIsConsultationModalOpen(true);
+  /**
+   * DIRECT WHATSAPP CONVERSION HANDLER
+   * Fires TikTok conversion events with full parameters and opens WhatsApp immediately.
+   */
+  const directToWhatsApp = (contextMessage?: string) => {
+    const defaultMsg = 'أهلاً البروفيسور للمطابخ والديكور، أود استشارة مهندس وحجز معاينة وتصميم 3D لمطبخي.';
+    const finalMsg = contextMessage || defaultMsg;
+
+    // Fire conversion and contact tracking for TikTok Pixel
+    trackContact('whatsapp_direct_01', 'WhatsApp Inquiry');
+    trackSubmitForm('whatsapp_lead_01', 'Direct WhatsApp Consultation', 500, 'EGP');
+    trackSchedule('consultation_schedule_01', 'WhatsApp 3D Design Booking', 500, 'EGP');
+
+    // WhatsApp safe redirection
+    const url = makeWhatsAppUrl(finalMsg);
+    setTimeout(() => {
+      window.location.href = url;
+    }, 250);
   };
 
   const handleLeadSubmit = () => {
@@ -69,7 +83,7 @@ export function App() {
 
       {/* HEADER: Ultra-clean, Simple, Creative & Mobile-First */}
       <Navbar
-        onOpenConsultation={openConsultationModal}
+        onOpenConsultation={directToWhatsApp}
         onNavigate={scrollTo}
       />
 
@@ -79,7 +93,7 @@ export function App() {
           heroProject={heroProject}
           onOpenProject={setActiveProject}
           onRequestConsultation={() =>
-            openConsultationModal(
+            directToWhatsApp(
               'أهلاً البروفيسور، أود استشارة مهندس معماري لمطبخي والبدء في إعداد دراسة وتصميم 3D متكامل لمساحتي.'
             )
           }
@@ -87,12 +101,12 @@ export function App() {
         />
 
         {/* TRUST RIBBON: High-Conversion Value Indicators */}
-        <TrustRibbon onOpenConsultation={openConsultationModal} />
+        <TrustRibbon onOpenConsultation={directToWhatsApp} />
 
         {/* SECTION: INTERACTIVE BEFORE & AFTER SLIDER */}
         <section id="before-after" className="scroll-mt-20 border-t border-white/[0.06] bg-[#090c10] py-20 md:py-28">
           <div className="mx-auto max-w-[1240px] px-6">
-            <BeforeAfterShowcase onStartWhatsApp={openConsultationModal} />
+            <BeforeAfterShowcase onStartWhatsApp={directToWhatsApp} />
           </div>
         </section>
 
@@ -100,39 +114,39 @@ export function App() {
         <ProjectsSection
           projects={PROJECTS}
           onSelectProject={setActiveProject}
-          onOpenConsultation={openConsultationModal}
+          onOpenConsultation={directToWhatsApp}
         />
 
         {/* SECTION: EUROPEAN MATERIALS ARCHIVE */}
         <section id="materials" className="scroll-mt-20 border-t border-white/[0.06] bg-[#090c10] py-20 md:py-28">
           <div className="mx-auto max-w-[1240px] px-6">
-            <MaterialsShowcase onStartWhatsApp={openConsultationModal} />
+            <MaterialsShowcase onStartWhatsApp={directToWhatsApp} />
           </div>
         </section>
 
         {/* SECTION: THE ARCHITECTURAL APPROACH & WORKFLOW */}
-        <JourneyWorkflow onStartConsultation={openConsultationModal} />
+        <JourneyWorkflow onStartConsultation={() => directToWhatsApp('أهلاً البروفيسور، أود استشارة مهندس بخصوص خطوات ومراحل تنفيذ مطبخي.')} />
 
         {/* SECTION: ARCHITECTURAL CHALLENGES & SOLUTIONS */}
-        <SpatialSolutions onStartWhatsApp={openConsultationModal} />
+        <SpatialSolutions onStartWhatsApp={directToWhatsApp} />
 
         {/* SECTION: FREQUENTLY ASKED QUESTIONS */}
-        <FAQSection onStartWhatsApp={openConsultationModal} />
+        <FAQSection onStartWhatsApp={directToWhatsApp} />
 
         {/* SECTION: PRIVATE ATELIER CONSULTATION */}
-        <ContactCtaSection onStartWhatsApp={openConsultationModal} />
+        <ContactCtaSection onStartWhatsApp={directToWhatsApp} />
       </main>
 
       {/* FOOTER: Minimalist Atelier Colophon */}
       <Footer
         onScrollToTop={() => scrollTo('hero')}
-        onOpenWhatsApp={openConsultationModal}
+        onOpenWhatsApp={directToWhatsApp}
       />
 
       {/* MOBILE STICKY CALL-TO-ACTION */}
       <MobileStickyCta
         onOpenConsultation={() =>
-          openConsultationModal('أهلاً البروفيسور، أود استشارة مهندس الأتيليه وبدء دراسة وتصميم 3D لمطبخي.')
+          directToWhatsApp('أهلاً البروفيسور، أود استشارة مهندس الأتيليه وبدء دراسة وتصميم 3D لمطبخي.')
         }
       />
 
@@ -140,17 +154,17 @@ export function App() {
       <ProjectModal
         project={activeProject}
         onClose={() => setActiveProject(null)}
-        onConsult={(message) => openConsultationModal(message)}
+        onConsult={(message) => directToWhatsApp(message)}
       />
 
       {/* DESKTOP FLOATING QUICK CONSULTATION CTA */}
       <FloatingAction
         onOpenConsultation={() =>
-          openConsultationModal('أهلاً البروفيسور، أود استشارة المهندس المعماري وحجز معاينة وتصميم 3D لمطبخي.')
+          directToWhatsApp('أهلاً البروفيسور، أود استشارة المهندس المعماري وحجز معاينة وتصميم 3D لمطبخي.')
         }
       />
 
-      {/* LEAD CAPTURE CONSULTATION MODAL (TikTok Funnel SubmitForm & Schedule) */}
+      {/* LEAD CAPTURE CONSULTATION MODAL (Retained in codebase for future re-enablement) */}
       <ConsultationModal
         isOpen={isConsultationModalOpen}
         onClose={() => setIsConsultationModalOpen(false)}
